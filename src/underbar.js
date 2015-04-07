@@ -426,14 +426,73 @@
 
   // Calls the method named by functionOrKey on each value in the list.
   // Note: You will need to learn a bit about .apply to complete this.
+
   _.invoke = function(collection, functionOrKey, args) {
+    var newArguments = [];
+    for (var i = 2; i < arguments.length; i++) {
+      newArguments.push(arguments[i]);
+    }
+
+    var answer = _.map(collection, function(item) {
+        if (typeof functionOrKey == "function") {
+          return functionOrKey.apply(item, newArguments);           
+        }
+        else if (typeof item[functionOrKey] == "function")
+        {
+          return item[functionOrKey](newArguments);
+        }
+      });    
+    return answer;
   };
 
   // Sort the object's values by a criterion produced by an iterator.
   // If iterator is a string, sort objects by that property with the name
   // of that string. For example, _.sortBy(people, 'name') should sort
   // an array of people by their name.
+  
   _.sortBy = function(collection, iterator) {
+
+    var answer = collection.slice();
+    var switchMade = true;
+    var temp;
+
+    if (typeof iterator == "function") {     
+
+      while (switchMade) {
+        switchMade = false;
+        for (var i = 1; i < answer.length; i++) {
+          if (((iterator(answer[i-1]) === undefined) &&
+               (iterator(answer[i]) !== undefined)) ||
+               (iterator(answer[i-1]) > iterator(answer[i])))
+          {
+            //Switch
+            temp = answer[i-1];
+            answer[i-1] = answer[i];
+            answer[i] = temp;
+            switchMade = true;
+          }
+        }
+      }
+    }
+
+    if (typeof iterator == "string") {     
+      while (switchMade) {
+        switchMade = false;
+        for (var i = 1; i < answer.length; i++) {
+          if (((answer[i-1][iterator] === undefined) &&
+               (answer[i][iterator] !== undefined)) ||
+               (answer[i-1][iterator] > answer[i][iterator]))
+          {
+            //Switch
+            temp = answer[i-1];
+            answer[i-1] = answer[i];
+            answer[i] = temp;
+            switchMade = true;
+          }
+        }
+      }
+    }   
+    return answer;
   };
 
   // Zip together two or more arrays with elements of the same index
@@ -442,6 +501,18 @@
   // Example:
   // _.zip(['a','b','c','d'], [1,2,3]) returns [['a',1], ['b',2], ['c',3], ['d',undefined]]
   _.zip = function() {
+    var answer = [];
+    var length = Math.max.apply(null, _.map(arguments, function(item) {return item.length}));
+    var subArray;
+
+    for (var i = 0; i < length; i++) {
+      subArray = [];
+      for (var j = 0; j < arguments.length; j++) {
+        subArray.push(arguments[j][i]);
+      }
+      answer.push(subArray);
+    }
+    return answer;
   };
 
   // Takes a multidimensional array and converts it to a one-dimensional array.
@@ -449,16 +520,60 @@
   //
   // Hint: Use Array.isArray to check if something is an array
   _.flatten = function(nestedArray, result) {
+    var answer = [];
+    for (var i = 0; i < nestedArray.length; i++) {
+      if (Array.isArray(nestedArray[i])) {
+        answer = answer.concat(_.flatten(nestedArray[i]));
+      }
+      else
+      {
+        answer.push(nestedArray[i]);
+      }
+    }
+    return answer;
   };
 
   // Takes an arbitrary number of arrays and produces an array that contains
   // every item shared between all the passed-in arrays.
   _.intersection = function() {
+    var answer = [];
+    var firstArray = arguments[0];
+    var lengthOfFirstArray = firstArray.length;
+
+    var restOfArguments = Array.prototype.slice.call(arguments, 1);
+    
+    for (var i = 0; i < lengthOfFirstArray; i++) {
+      if (_.every(restOfArguments, function(array) {
+        return (_.indexOf(array, firstArray[i]) != -1); 
+      })) {
+        //check to make sure no duplicates in answer!
+        answer.push(firstArray[i]);
+      }
+    }
+    
+    return answer;
   };
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
+    var answer = [];
+    var firstArray = arguments[0];
+    var lengthOfFirstArray = firstArray.length;
+
+    var restOfArguments = Array.prototype.slice.call(arguments, 1);
+    
+    for (var i = 0; i < lengthOfFirstArray; i++) {
+      if (_.every(restOfArguments, function(array) {
+        return (_.indexOf(array, firstArray[i]) == -1); 
+      })) {
+        //check to make sure no duplicates in answer!
+        answer.push(firstArray[i]);
+      }
+    }
+    
+    return answer;
+
   };
 
   // Returns a function, that, when invoked, will only be triggered at most once
@@ -466,6 +581,41 @@
   // on this function.
   //
   // Note: This is difficult! It may take a while to implement.
+  
   _.throttle = function(func, wait) {
+
+ //   var startTime = new Date(2000, 1, 1).getTime();
+    var startTime = 0;
+
+    var memoizedVal;
+    var alreadyCalledSecondTime = false;
+     
+    return function() {
+
+      if (!alreadyCalledSecondTime) {
+        var currentTime = new Date().getTime();
+
+        var elapsedTime = currentTime - startTime;
+
+        if (elapsedTime < wait) {
+          alreadyCalledSecondTime = true;
+          setTimeout(function() {
+            alreadyCalledSecondTime = false;
+            startTime = new Date().getTime();
+            memoizedVal = func();
+            return memoizedVal;
+          }, wait - elapsedTime + 1);
+
+        }
+        else
+        {
+          startTime = new Date().getTime();
+          memoizedVal = func();
+        }
+      }
+      return memoizedVal;
+    };
   };
+
+
 }());
