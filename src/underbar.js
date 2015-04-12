@@ -584,33 +584,41 @@
   
   _.throttle = function(func, wait) {
 
- //   var startTime = new Date(2000, 1, 1).getTime();
     var startTime = 0;
-
     var memoizedVal;
-    var alreadyCalledSecondTime = false;
+    var autoCallScheduled = false;
+    var scheduledTime;
      
     return function() {
 
-      if (!alreadyCalledSecondTime) {
-        var currentTime = new Date().getTime();
+      var argList = Array.prototype.slice.call(arguments, 0);
+      var currentTime = new Date().getTime();
+      var elapsedTime = currentTime - startTime;
 
-        var elapsedTime = currentTime - startTime;
+      if (!autoCallScheduled) {
 
         if (elapsedTime < wait) {
-          alreadyCalledSecondTime = true;
+          autoCallScheduled = true;
+          scheduledTime = currentTime + wait - elapsedTime;
           setTimeout(function() {
-            alreadyCalledSecondTime = false;
             startTime = new Date().getTime();
-            memoizedVal = func();
+            memoizedVal = func.apply(null, argList);
             return memoizedVal;
-          }, wait - elapsedTime + 1);
+          }, wait - elapsedTime);
 
         }
         else
         {
           startTime = new Date().getTime();
-          memoizedVal = func();
+          memoizedVal = func.apply(null, argList);
+
+        }
+      }
+      else if (elapsedTime >= wait) {
+        if (scheduledTime != currentTime) {
+          autoCallScheduled = false;
+          startTime = new Date().getTime();
+          memoizedVal = func.apply(null, argList);
         }
       }
       return memoizedVal;
