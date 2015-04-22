@@ -38,17 +38,10 @@
   // Like first, but for the last elements. If n is undefined, return just the
   // last element.
   _.last = function(array, n) {
-    var length = array.length;
-    if (n === undefined) {
-      return array[length - 1];
+    if (n === 0) {
+      return [];
     }
-    else
-    {
-      if (length < n) {
-        n = length;
-      }
-      return array.slice(length - n);      
-    }
+    return n === undefined ? array[array.length - 1] : array.slice(-n);
   };
 
   // Call iterator(value, key, collection) for each element of collection.
@@ -361,21 +354,18 @@
     var usedArgs = {};
     return function() {
       var currentObj = usedArgs;
-      var lastArgIndex = arguments.length - 1;
-      for (var i = 0; i < lastArgIndex; i++) {
-        if (currentObj[arguments[i]] == undefined) {
+      var length = arguments.length;
+      for (var i = 0; i < length; i++) {
+        if (currentObj[arguments[i]] === undefined) {
           currentObj[arguments[i]] = {};
         }
-        else
-        {
-          currentObj = currentObj[arguments[i]];
-        }
+        currentObj = currentObj[arguments[i]];
       }
 
-      if (currentObj[arguments[lastArgIndex]] == undefined) {
-        currentObj[arguments[lastArgIndex]] = func.apply(this, arguments);
+      if (currentObj.finalAnswer === undefined) {
+        currentObj.finalAnswer = func.apply(this, arguments);
       }
-      return currentObj[arguments[lastArgIndex]];        
+      return currentObj.finalAnswer;        
     };
   };
 
